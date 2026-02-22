@@ -71,6 +71,7 @@ This presents a numbered menu:
 5) Delete all keys
 6) Test a key by alias
 7) Check repo permissions (pull/push)
+8) List profiles with details
 0) Exit
 =======================================================
 ```
@@ -185,12 +186,12 @@ Check which configured profiles have pull (read) and push (write) access to a re
 ```
 Checking permissions for repository: owner/repo
 ================================================
-github-personal:
+github-personal (johndoe - personal@gmail.com):
   ✓ Pull (read access)
   ✓ Push (write access)
   Clone: git clone git@github-personal:owner/repo.git
 
-github-work:
+github-work (jdoe-corp - work@company.com):
   ✓ Pull (read access)
   ✗ Push (no write access)
   Clone: git clone git@github-work:owner/repo.git
@@ -200,6 +201,32 @@ Recommended clone command:
 ```
 
 **Note:** `clone-check` is also available as an alias for backwards compatibility.
+
+### profiles
+
+List all configured profiles with their associated email and GitHub username.
+
+```bash
+./setupGithubSSHKey.sh profiles
+```
+
+**Output:**
+```
+Configured GitHub Profiles
+==========================
+
+Profile: personal
+  Host Alias:  github-personal
+  Email:       personal@gmail.com
+  Username:    johndoe
+  Key:         ~/.ssh/id_ed25519_personal
+
+Profile: work
+  Host Alias:  github-work
+  Email:       work@company.com
+  Username:    jdoe-corp
+  Key:         ~/.ssh/id_ed25519_work
+```
 
 ### delete-all
 

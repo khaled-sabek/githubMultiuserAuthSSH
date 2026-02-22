@@ -126,6 +126,51 @@ get_profiles() {
     grep -E "^Host github-" "$CONFIG_FILE" 2>/dev/null | awk '{print $2}' | sed 's/^github-//'
 }
 
+get_key_email() {
+    local profile="$1"
+    local pub_key="$SSH_DIR/id_ed25519_${profile}.pub"
+    [[ -f "$pub_key" ]] && awk '{print $3}' "$pub_key"
+}
+
+get_github_username() {
+    local host_alias="$1"
+    local output
+    output=$(ssh -T "$host_alias" 2>&1)
+    if [[ "$output" =~ Hi\ ([^!]+)! ]]; then
+        echo "${BASH_REMATCH[1]}"
+    fi
+}
+
+list_profiles() {
+    local profiles
+    profiles=$(get_profiles)
+    
+    if [[ -z "$profiles" ]]; then
+        echo "No profiles found in SSH config."
+        return
+    fi
+    
+    echo "Configured GitHub Profiles"
+    echo "=========================="
+    
+    for profile in $profiles; do
+        local host_alias="github-${profile}"
+        local key_path="$SSH_DIR/id_ed25519_${profile}"
+        local email
+        local username
+        
+        email=$(get_key_email "$profile")
+        username=$(get_github_username "$host_alias")
+        
+        echo ""
+        echo "Profile: $profile"
+        echo "  Host Alias:  $host_alias"
+        echo "  Email:       ${email:-<not found>}"
+        echo "  Username:    ${username:-<not authenticated>}"
+        echo "  Key:         $key_path"
+    done
+}
+
 parse_repo_url() {
     local url="$1"
     local owner_repo=""
@@ -169,13 +214,17 @@ check_permissions() {
     local found_pull=""
     local first_pull_profile=""
     local first_push_profile=""
-    local summary=""
     
     for profile in $profiles; do
         local host_alias="github-${profile}"
         local test_url="git@${host_alias}:${owner_repo}.git"
         local has_pull=""
         local has_push=""
+        local email
+        local username
+        
+        email=$(get_key_email "$profile")
+        username=$(get_github_username "$host_alias")
         
         if git ls-remote "$test_url" HEAD >/dev/null 2>&1; then
             has_pull="yes"
@@ -187,7 +236,7 @@ check_permissions() {
             [[ -z "$first_push_profile" ]] && first_push_profile="$test_url"
         fi
         
-        echo "$host_alias:"
+        echo "$host_alias (${username:-?} - ${email:-?}):"
         if [[ -n "$has_pull" ]]; then
             echo "  ✓ Pull (read access)"
             found_pull="yes"
@@ -226,6 +275,7 @@ interactive_menu() {
         echo "5) Delete all keys"
         echo "6) Test a key by alias"
         echo "7) Check repo permissions (pull/push)"
+        echo "8) List profiles with details"
         echo "0) Exit"
         echo "======================================================="
         read -p "Choose an option: " choice
@@ -258,6 +308,9 @@ interactive_menu() {
                 read -p "GitHub repo URL (or owner/repo): " repo_url
                 check_permissions "$repo_url"
                 ;;
+            8)
+                list_profiles
+                ;;
             0)
                 echo "Exiting..."
                 break
@@ -278,6 +331,7 @@ if [[ $# -ge 1 ]]; then
         add) add_key "$@" ;;
         remove) remove_key "$@" ;;
         list) list_keys ;;
+        profiles) list_profiles ;;
         linked) list_linked ;;
         check) check_key "$@" ;;
         delete-all) delete_all_keys ;;
