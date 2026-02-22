@@ -103,12 +103,12 @@ check_key() {
 list_linked() {
     echo "Checking which local keys authenticate with GitHub..."
     echo "----------------------------------------------------"
+    local output
     for key in "$SSH_DIR"/id_ed25519*; do
         [[ -f "$key" ]] || continue
         [[ "$key" == *.pub ]] && continue
-        local output
-        output=$(ssh -i "$key" -o IdentitiesOnly=yes -o StrictHostKeyChecking=no -T git@github.com 2>&1)
-        if [[ "$output" =~ Hi\ ([^!]+)! ]]; then
+        output=$(ssh -i "$key" -o IdentitiesOnly=yes -o StrictHostKeyChecking=no -T git@github.com 2>&1) || true
+        if [[ "$output" =~ "Hi "([^!]+)"!" ]]; then
             echo "$key: Hi ${BASH_REMATCH[1]}! (authenticated)"
         elif [[ "$output" =~ "Permission denied" ]]; then
             echo "$key: Permission denied (not registered on GitHub)"
