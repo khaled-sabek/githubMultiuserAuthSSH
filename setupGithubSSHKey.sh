@@ -105,8 +105,16 @@ list_linked() {
     echo "----------------------------------------------------"
     for key in "$SSH_DIR"/id_ed25519*; do
         [[ -f "$key" ]] || continue
-        ssh -i "$key" -o IdentitiesOnly=yes -o StrictHostKeyChecking=no -T git@github.com 2>&1 | \
-        grep -E "Hi|Permission denied" | awk -v k="$key" '{print k ": " $0}'
+        [[ "$key" == *.pub ]] && continue
+        local output
+        output=$(ssh -i "$key" -o IdentitiesOnly=yes -o StrictHostKeyChecking=no -T git@github.com 2>&1)
+        if [[ "$output" =~ Hi\ ([^!]+)! ]]; then
+            echo "$key: Hi ${BASH_REMATCH[1]}! (authenticated)"
+        elif [[ "$output" =~ "Permission denied" ]]; then
+            echo "$key: Permission denied (not registered on GitHub)"
+        else
+            echo "$key: No response (key may not be registered)"
+        fi
     done
 }
 
