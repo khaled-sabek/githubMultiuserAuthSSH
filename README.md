@@ -70,8 +70,9 @@ This presents a numbered menu:
 4) Check which keys authenticate (linked)
 5) Delete all keys
 6) Test a key by alias
+7) Check repo permissions (pull/push)
 0) Exit
-========================================================
+=======================================================
 ```
 
 ### Command-Line Mode
@@ -103,6 +104,7 @@ Generate a new SSH key and configure `~/.ssh/config` for a profile.
 2. Starts `ssh-agent` and adds the key
 3. Appends a `Host github-<profile>` block to `~/.ssh/config`
 4. Prints the public key so you can add it to GitHub under **Settings > SSH and GPG Keys**
+5. Prompts to test the SSH connection immediately after adding
 
 **Example:**
 ```bash
@@ -153,6 +155,51 @@ Test a specific host alias.
 ```
 
 Runs `ssh -T <alias>` to verify the connection. A successful test prints: `Hi <username>! You've successfully authenticated...`
+
+### permissions
+
+Check which configured profiles have pull (read) and push (write) access to a repository.
+
+```bash
+./setupGithubSSHKey.sh permissions <repo-url>
+```
+
+**Supported URL formats:**
+- `https://github.com/owner/repo.git`
+- `git@github.com:owner/repo.git`
+- `owner/repo` (shorthand)
+
+**What it does:**
+1. Parses the repository URL to extract owner/repo
+2. Iterates through all configured profiles in `~/.ssh/config`
+3. Tests pull access using `git ls-remote`
+4. Tests push access using `git push --dry-run`
+5. Reports permissions for each profile and provides the correct clone command
+
+**Example:**
+```bash
+./setupGithubSSHKey.sh permissions owner/repo
+```
+
+**Output:**
+```
+Checking permissions for repository: owner/repo
+================================================
+github-personal:
+  ✓ Pull (read access)
+  ✓ Push (write access)
+  Clone: git clone git@github-personal:owner/repo.git
+
+github-work:
+  ✓ Pull (read access)
+  ✗ Push (no write access)
+  Clone: git clone git@github-work:owner/repo.git
+
+Recommended clone command:
+  git clone git@github-personal:owner/repo.git
+```
+
+**Note:** `clone-check` is also available as an alias for backwards compatibility.
 
 ### delete-all
 
