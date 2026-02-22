@@ -31,7 +31,7 @@ add_key() {
     touch "$CONFIG_FILE"
     chmod 600 "$CONFIG_FILE"
 
-    if ! grep -q "Host $host_alias" "$CONFIG_FILE"; then
+    if ! grep -q "^Host ${host_alias}$" "$CONFIG_FILE"; then
         cat >> "$CONFIG_FILE" <<EOF
 
 Host $host_alias
@@ -80,7 +80,7 @@ remove_key() {
         echo "No key found for profile '$profile'"
     fi
 
-    if grep -q "Host $host_alias" "$CONFIG_FILE"; then
+    if grep -q "^Host ${host_alias}$" "$CONFIG_FILE"; then
         sed -i "/Host $host_alias/,/^$/d" "$CONFIG_FILE"
         echo "Removed SSH config entry for $host_alias."
     fi
